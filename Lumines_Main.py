@@ -1,5 +1,6 @@
 from Lumines_board import Board
 from Lumines_Display import Display
+from Lumines_GA import GA
 from tkinter import mainloop
 import os
 import win32gui
