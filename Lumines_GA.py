@@ -93,15 +93,17 @@ class GA:
                 while board.move_piece("left"):
                     move_sequence.append("left")
                 bak2 = copy.deepcopy(board)
-                while board.move_piece("down",set_override=True):
+                while board.move_piece("down",set_override=(not first)):
                     move_sequence.append("down")
-                all_paths.append((list(move_sequence),get_score(board)))
+                if first: all_paths.append((list(move_sequence),find_move(board,first=False))
+                else: return get_score(board)
                 
                 board = bak2
                 while board.move_piece("right"):
                     if "left" in move_sequence: list.remove("left")
                     else: list.append("right")
                     bak2 = copy.deepcopy(board)
-                    while board.move_piece("down",set_override=True):
+                    while board.move_piece("down",set_override=(not first)):
                         move_sequence.append("down")
-                    all_paths.append((list(move_sequence),get_score(board)))
+                    if first: all_paths.append((list(move_sequence),find_move(board,first=False))
+                    else: return get_score(board)
