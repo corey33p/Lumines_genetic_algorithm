@@ -1,8 +1,9 @@
 import numpy as np
 
 class Board:
-    def __init__(self,size):
+    def __init__(self,size,queue=None):
         # self.parent = parent
+        self.queue = queue
         self.size=size
         self.printing_board = True
     def print_board(self,direct_print=False):
@@ -26,7 +27,8 @@ class Board:
     def add_piece(self):
         next_piece = self.queue.pop(0)
         self.active_blocks[0:2,8:10]=next_piece
-        self.queue.append(np.random.randint(1,3,(2,2)))
+        if len(self.queue)<5:
+            self.queue.append(np.random.randint(1,3,(2,2)))
     def move_piece(self,direction="down",set_override=False):
         going_to_happen=True
         set_piece = False
@@ -124,11 +126,12 @@ class Board:
         board = np.copy(self.set_blocks)
         board[self.active_blocks!=0]=self.active_blocks[self.active_blocks!=0]
         return board
-    def new_game(self):
+    def new_game(self,queue=None):
+        self.queue = queue
         working_size = (self.size[0]+2,self.size[1])
         self.set_blocks = np.zeros(working_size,np.int32)
         self.active_blocks = np.zeros(working_size,np.int32)
-        self.queue = [np.random.randint(1,3,(2,2)) for i in range(4)]
+        if self.queue is None: self.queue = [np.random.randint(1,3,(2,2)) for i in range(4)]
         self.add_piece()
         self.game_lost = False
         self.pieces_placed = 0

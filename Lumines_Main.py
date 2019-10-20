@@ -10,6 +10,8 @@ from queue import Queue
 import numpy as np
 import copy
 
+np.set_printoptions(suppress=True, precision=2, linewidth=140)
+
 class Parent:
     def __init__(self):
         self.board_size=(10,16)
@@ -26,13 +28,21 @@ class Parent:
         # mainloop()
     def simulate_games(self):
         forever = True
+        generation = 0
         while forever:
+            generation += 1
             self.GA.scores = np.zeros((self.GA.population_size))
+            queue = [np.random.randint(1,3,(2,2)) for i in range(75)]
+            self.board.new_game(queue=queue)
+            game_bak = copy.deepcopy(self.board)
             for i,member in enumerate(self.GA.population):
-                self.board.new_game()
-                while (not self.board.game_lost) and self.board.pieces_placed < 50:
+                # print("member: " + str(member))
+                self.board = copy.deepcopy(game_bak)
+                moves = 0
+                max_moves = 0
+                while (not self.board.game_lost) and self.board.pieces_placed < 500:
                     move = self.GA.find_move(copy.deepcopy(self.board),member)
-                    # print("move: " + str(move))
+                    moves+=1
                     for step in move: 
                         # print("step: " + str(step))
                         if step == "left": self.board.move_piece("left")
@@ -41,11 +51,16 @@ class Parent:
                         elif step == "drop": 
                             while self.board.move_piece("down"): pass
                         if self.board.game_lost: break
+                    # print("moves: " + str(moves),end="\r")
                     # print(self.board.print_board())
+                    if moves > max_moves: max_moves = moves
+                # print("moves: " + str(moves))
                 # print("self.board.game_lost: " + str(self.board.game_lost))
-                self.GA.scores[i]=self.board.score+self.board.pieces_placed
-                print("self.GA.scores["+str(i)+"]: " + str(self.GA.scores[i]))
-            self.GA.crossover()
+                self.GA.scores[i]=self.board.score+.1*self.board.pieces_placed
+                print("self.GA.scores["+str(i)+"]: " + str(self.GA.scores[i]//.01/100),end="                      \r")
+            scores = np.asarray(self.GA.scores)
+            print("Generation "+str(generation)+"; mean score: "+str(np.mean(scores)//.01/100)+"; max score: "+str(max(scores)//.01/100)+"; max moves: "+str(max_moves))
+            self.GA.crossover(np.asarray(self.GA.scores))
     def resize_CLI_window(self):
         def get_windows():
             def check(hwnd, param):
