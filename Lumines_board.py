@@ -1,11 +1,11 @@
 import numpy as np
 
 class Board:
-    def __init__(self,parent,size):
-        self.parent = parent
+    def __init__(self,size):
+        # self.parent = parent
         self.size=size
         self.printing_board = True
-    def print_board(self):
+    def print_board(self,direct_print=False):
         ########
         combined_board = np.copy(self.set_blocks)
         combined_board[self.active_blocks != 0] = self.active_blocks[self.active_blocks != 0]
@@ -19,8 +19,9 @@ class Board:
                 elif square_type == 2: board_str+="██"
             board_str+="\n"
         board_str+="\n"
-        # print("_________\n"+board_str)
-        self.parent.display.text_out.overwrite(board_str)
+        if direct_print: print("______________________________\n"+board_str)
+        # self.parent.display.text_out.overwrite(board_str)
+        self.board_str = board_str
         return board_str
     def add_piece(self):
         next_piece = self.queue.pop(0)
@@ -58,7 +59,10 @@ class Board:
         elif direction == "up":
             going_to_happen = False
         if going_to_happen:
-            self.active_blocks = desired_loc
+            try: self.active_blocks = desired_loc
+            except: 
+                print("direction: " + str(direction))
+                input(self.print_board())
         # else:
             # print("not going to happen")
         if (not set_override) and set_piece: self.set_piece()
@@ -86,6 +90,7 @@ class Board:
             self.game_lost = True
         else:
             self.add_piece()
+            self.pieces_placed += 1
     def drape_blocks(self):
         rows,cols=self.set_blocks.shape
         for col in range(cols):
@@ -113,8 +118,12 @@ class Board:
             self.set_blocks[row:row+2,col:col+2] = 0
         if spots_to_break:
             self.score += 2**(len(spots_to_break)-1)
-            self.parent.display.update_score(self.score)
+            # self.parent.display.update_score(self.score)
         return bool(spots_to_break)
+    def whole_board(self):
+        board = np.copy(self.set_blocks)
+        board[self.active_blocks!=0]=self.active_blocks[self.active_blocks!=0]
+        return board
     def new_game(self):
         working_size = (self.size[0]+2,self.size[1])
         self.set_blocks = np.zeros(working_size,np.int32)
@@ -122,6 +131,7 @@ class Board:
         self.queue = [np.random.randint(1,3,(2,2)) for i in range(4)]
         self.add_piece()
         self.game_lost = False
+        self.pieces_placed = 0
         self.score = 0
-        self.parent.display.update_score(self.score)
+        # self.parent.display.update_score(self.score)
         if self.printing_board: self.print_board()
