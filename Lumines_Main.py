@@ -41,7 +41,7 @@ class Parent:
                 moves = 0
                 max_moves = 0
                 while (not self.board.game_lost) and self.board.pieces_placed < 500:
-                    move = self.GA.find_move(copy.deepcopy(self.board),member)
+                    move = self.GA.find_move1(copy.deepcopy(self.board),member)
                     moves+=1
                     for step in move: 
                         # print("step: " + str(step))
@@ -56,16 +56,17 @@ class Parent:
                     if moves > max_moves: max_moves = moves
                 # print("moves: " + str(moves))
                 # print("self.board.game_lost: " + str(self.board.game_lost))
-                self.GA.scores[i]=self.board.score+.1*self.board.pieces_placed
+                self.GA.scores[i]=self.board.score+.05*self.board.pieces_placed**2
                 print("self.GA.scores["+str(i)+"]: " + str(self.GA.scores[i]//.01/100),end="                      \r")
             scores = np.asarray(self.GA.scores)
             print("Generation "+str(generation)+"; mean score: "+str(np.mean(scores)//.01/100)+"; max score: "+str(max(scores)//.01/100)+"; max moves: "+str(max_moves))
             self.GA.crossover(np.asarray(self.GA.scores))
+            print("self.GA.top_dog: " + str(self.GA.top_dog))
     def resize_CLI_window(self):
         def get_windows():
             def check(hwnd, param):
                 title = win32gui.GetWindowText(hwnd)
-                if 'Rubiks_Main' in title and 'Notepad++' not in title:
+                if 'Lumines_Main' in title and 'Notepad++' not in title:
                     param.append(hwnd)
             wind = []
             win32gui.EnumWindows(check, wind)
@@ -81,4 +82,3 @@ class Parent:
 
 if __name__ == '__main__':
     main_object = Parent()
-    

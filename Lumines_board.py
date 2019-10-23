@@ -29,7 +29,7 @@ class Board:
         self.active_blocks[0:2,8:10]=next_piece
         if len(self.queue)<5:
             self.queue.append(np.random.randint(1,3,(2,2)))
-    def move_piece(self,direction="down",set_override=False):
+    def move_piece(self,direction="down",break_override=False):
         going_to_happen=True
         set_piece = False
         if direction == "down":
@@ -67,7 +67,7 @@ class Board:
                 input(self.print_board())
         # else:
             # print("not going to happen")
-        if (not set_override) and set_piece: self.set_piece()
+        if set_piece: self.set_piece(break_override=break_override)
         if self.printing_board: self.print_board()
         if going_to_happen: return True
         else: return False
@@ -82,17 +82,20 @@ class Board:
             piece = np.rot90(piece)
         self.active_blocks[row:row+2,col:col+2]=piece
         if self.printing_board: self.print_board()
-    def set_piece(self):
+    def set_piece(self,break_override=False):
         self.set_blocks[self.active_blocks != 0] = self.active_blocks[self.active_blocks != 0]
         self.active_blocks[:,:]=0
         self.drape_blocks()
-        while self.break_blocks():
-            self.drape_blocks()
+        if not break_override:
+            self.auto_break()
         if np.any(self.set_blocks[:2,:]!=0):
             self.game_lost = True
         else:
             self.add_piece()
             self.pieces_placed += 1
+    def auto_break(self):
+        while self.break_blocks():
+            self.drape_blocks()
     def drape_blocks(self):
         rows,cols=self.set_blocks.shape
         for col in range(cols):
