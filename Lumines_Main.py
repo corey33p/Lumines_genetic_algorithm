@@ -30,20 +30,20 @@ class Parent:
         forever = True
         generation = 0
         games = []
-        for i in range(n):
-            queue = [np.random.randint(1,3,(2,2)) for i in range(75)]
-            self.board.new_game(queue=queue)
-            games.append(copy.deepcopy(self.board))
         while forever:
             generation += 1
             self.GA.scores = [0 for i in range(self.GA.population_size)]
+            max_moves = 0
+            for i in range(n):
+                queue = [np.random.randint(1,3,(2,2)) for i in range(150)]
+                self.board.new_game(queue=queue)
+                games.append(copy.deepcopy(self.board))
             for j,game in enumerate(games):
                 game_bak = copy.deepcopy(game)
                 for i,member in enumerate(self.GA.population):
                     # print("member: " + str(member))
                     self.board = copy.deepcopy(game_bak)
                     moves = 0
-                    max_moves = 0
                     while (not self.board.game_lost) and self.board.pieces_placed < 500:
                         move = self.GA.find_move1(copy.deepcopy(self.board),member)
                         moves+=1
@@ -61,11 +61,11 @@ class Parent:
                     # print("moves: " + str(moves))
                     # print("self.board.game_lost: " + str(self.board.game_lost))
                     self.GA.scores[i]+=self.board.score+.05*self.board.pieces_placed**2
-                    print("game "+str(j+1)+"; self.GA.scores["+str(i)+"]: " + str(self.GA.scores[i]//.01/100),end="                      \r")
+                    print("Generation: "+str(generation)+", Game: "+str(j+1)+", Player: "+str(i+1)+", Total: " + str(self.GA.scores[i]//.01/100),end="           \r")
                 scores = np.asarray(self.GA.scores)/n
-            print("Generation "+str(generation)+"; mean score: "+str(np.mean(scores)//.01/100)+"; max score: "+str(max(scores)//.01/100)+"; max moves: "+str(max_moves))
+            print("Generation "+str(generation)+"; mean score: "+str(np.mean(scores)//.01/100)+"; max mean: "+str(max(scores)//.01/100)+"; max moves: "+str(max_moves))
             self.GA.crossover(np.asarray(self.GA.scores))
-            print("self.GA.top_dog: " + str(self.GA.top_dog))
+            print("   Top player: " + str(self.GA.top_dog))
     def resize_CLI_window(self):
         def get_windows():
             def check(hwnd, param):

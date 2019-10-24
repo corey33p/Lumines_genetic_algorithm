@@ -12,7 +12,7 @@ class GA:
         self.population_size = 15
         self.mutation_threshold = .2
         self.mutation_standard_deviation_factor = 1.15
-        self.number_of_genes = 8
+        self.number_of_genes = 9
         self.random_seed()
     def random_seed(self):
         if os.path.isfile("save/top_dog.npy"):
@@ -23,7 +23,7 @@ class GA:
         else: self.population = np.random.random((self.population_size,self.number_of_genes))*2-1
     def get_board_stats(self,board):
         previous_state = board.last_board
-        board = board.whole_board()
+        board = np.copy(board.set_blocks)
         def average_cluster_size(ar):
             unique_vals = set(ar.flatten().tolist())
             unique_vals.remove(0)
@@ -43,12 +43,6 @@ class GA:
         # empty columns
         empty_columns = np.sum(np.sum(board==0,axis=0)==0)
         
-        # new matching neighbor colors
-        new_blocks = board != previous_state
-        print("previous_state:\n" + str(previous_state))
-        print("board:\n" + str(board))
-        input("new_blocks:\n" + str(new_blocks))
-        
         # four squares (blocks that will break)
         locations_of_ones = board==1
         locations_of_twos = board==2
@@ -65,6 +59,26 @@ class GA:
         number_of_lonely_twos = np.sum(np.logical_and(neighbor_count==0,locations_of_twos!=0))
         number_of_lonely_squares = number_of_lonely_ones + number_of_lonely_twos
         
+        # new matching neighbor colors
+        locations_of_ones = previous_state==1
+        locations_of_twos = previous_state==2
+        new_blocks = np.zeros((12,16),np.int32)
+        new_blocks[board != previous_state] = board[board != previous_state]
+        kernel = np.array([[0,1,0],[1,0,1],[0,1,0]])
+        #
+        new_ones = np.copy(new_blocks)
+        new_ones[new_ones!=1]=0
+        neighbor_count = signal.convolve2d(locations_of_ones,kernel,mode='same')
+        neighbor_count[new_ones==0]=0
+        number_of_one_neighbors = np.sum(neighbor_count)
+        #
+        new_twoes = np.copy(new_blocks)
+        new_twoes[new_twoes!=2]=0
+        neighbor_count = signal.convolve2d(locations_of_twos,kernel,mode='same')
+        neighbor_count[new_twoes==0]=0
+        number_of_two_neighbors = np.sum(neighbor_count)
+        new_neighbors = number_of_one_neighbors + number_of_two_neighbors
+        
         # average cluster size
         acs = average_cluster_size(board)
         
@@ -77,7 +91,7 @@ class GA:
         # max height
         max_height = int(np.max(np.sum(board!=0,axis=0)))
         #
-        return occupied_squares,aggregate_height,empty_columns,four_squares,acs,bumpiness,number_of_lonely_squares,max_height
+        return occupied_squares,aggregate_height,empty_columns,four_squares,acs,bumpiness,number_of_lonely_squares,max_height,new_neighbors
     def get_score(self,board,coefficients):
         s = np.asarray(self.get_board_stats(board)).reshape(self.number_of_genes,1)
         c = coefficients
