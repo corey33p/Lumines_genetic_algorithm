@@ -83,6 +83,7 @@ class Board:
         self.active_blocks[row:row+2,col:col+2]=piece
         if self.printing_board: self.print_board()
     def set_piece(self,break_override=False):
+        self.last_board = np.copy(self.set_blocks)
         self.set_blocks[self.active_blocks != 0] = self.active_blocks[self.active_blocks != 0]
         self.active_blocks[:,:]=0
         self.drape_blocks()

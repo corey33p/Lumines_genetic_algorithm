@@ -9,7 +9,7 @@ np.set_printoptions(suppress=True, precision=2, linewidth=140)
 
 class GA:
     def __init__(self):
-        self.population_size = 20
+        self.population_size = 15
         self.mutation_threshold = .2
         self.mutation_standard_deviation_factor = 1.15
         self.number_of_genes = 8
@@ -22,6 +22,8 @@ class GA:
             # input("self.population:\n" + str(self.population))
         else: self.population = np.random.random((self.population_size,self.number_of_genes))*2-1
     def get_board_stats(self,board):
+        previous_state = board.last_board
+        board = board.whole_board()
         def average_cluster_size(ar):
             unique_vals = set(ar.flatten().tolist())
             unique_vals.remove(0)
@@ -40,6 +42,12 @@ class GA:
         
         # empty columns
         empty_columns = np.sum(np.sum(board==0,axis=0)==0)
+        
+        # new matching neighbor colors
+        new_blocks = board != previous_state
+        print("previous_state:\n" + str(previous_state))
+        print("board:\n" + str(board))
+        input("new_blocks:\n" + str(new_blocks))
         
         # four squares (blocks that will break)
         locations_of_ones = board==1
@@ -71,7 +79,7 @@ class GA:
         #
         return occupied_squares,aggregate_height,empty_columns,four_squares,acs,bumpiness,number_of_lonely_squares,max_height
     def get_score(self,board,coefficients):
-        s = np.asarray(self.get_board_stats(board.whole_board())).reshape(self.number_of_genes,1)
+        s = np.asarray(self.get_board_stats(board)).reshape(self.number_of_genes,1)
         c = coefficients
         # self.scores = np.dot(self.population,stats)
         sums = np.asarray([s[i]*c[i] for i in range(len(coefficients))])
