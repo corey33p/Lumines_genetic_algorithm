@@ -31,7 +31,7 @@ class Display:
         self.textbox.grid(row=0,column=0,sticky='ew')
         self.primary_window.grid_columnconfigure(0, weight=1)
         # sys.stdout = self.parent.text_out = TextWriter(self.textbox)
-        self.text_out = TextWriter(self.textbox)
+        self.textScreen = TextWriter(self.textbox)
         
         # button bindings
         self.primary_window.bind("<Left>", lambda event: self.arrow_key("L"))

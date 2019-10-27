@@ -12,7 +12,7 @@ class GA:
         self.population_size = 15
         self.mutation_threshold = .2
         self.mutation_standard_deviation_factor = 1.15
-        self.number_of_genes = 9
+        self.number_of_genes = 10
         self.random_seed()
     def random_seed(self):
         if os.path.isfile("save/top_dog.npy"):
@@ -23,35 +23,41 @@ class GA:
         else: self.population = np.random.random((self.population_size,self.number_of_genes))*2-1
     def get_board_stats(self,board):
         previous_state = board.last_board
-        board = np.copy(board.set_blocks)
+        pre_break_board = np.copy(board.set_blocks)
+        board.auto_break()
+        post_break_board = np.copy(board.set_blocks)
         def average_cluster_size(ar):
             unique_vals = set(ar.flatten().tolist())
             unique_vals.remove(0)
             cluster_sizes = np.array(())
+            number_of_clusters = 0
             for val in unique_vals:
                 working_ar = (ar == val).astype(np.int32)
                 a,b=measurements.label(working_ar)
                 area=measurements.sum(working_ar,a,index=np.arange(1,a.max()+1))
                 cluster_sizes=np.concatenate((cluster_sizes,np.array(area)))
-            return np.mean(cluster_sizes)
+                number_of_clusters += len(area)
+            return np.mean(cluster_sizes),number_of_clusters
         # occupied squares
-        occupied_squares = np.sum(board!=0)
+        occupied_squares = np.sum(post_break_board!=0)
         
         # aggregate height
-        aggregate_height = np.sum(np.sum(board!=0,axis=0))
+        aggregate_height = np.sum(np.sum(post_break_board!=0,axis=0))
         
         # empty columns
-        empty_columns = np.sum(np.sum(board==0,axis=0)==0)
+        empty_columns = np.sum(np.sum(post_break_board==0,axis=0)==0)
         
         # four squares (blocks that will break)
-        locations_of_ones = board==1
-        locations_of_twos = board==2
+        locations_of_ones = pre_break_board==1
+        locations_of_twos = pre_break_board==2
         kernel = np.array([[1,1],[1,1]])
         four_ones = signal.convolve2d(locations_of_ones,kernel,mode='same')
         four_twos = signal.convolve2d(locations_of_twos,kernel,mode='same')
         four_squares = np.sum(four_ones==4)+np.sum(four_twos==4)
         
         # number of isolated pieces
+        locations_of_ones = post_break_board==1
+        locations_of_twos = post_break_board==2
         kernel = np.array([[0,1,0],[1,0,1],[0,1,0]])
         neighbor_count = signal.convolve2d(locations_of_ones,kernel,mode='same')
         number_of_lonely_ones = np.sum(np.logical_and(neighbor_count==0,locations_of_ones!=0))
@@ -63,7 +69,7 @@ class GA:
         locations_of_ones = previous_state==1
         locations_of_twos = previous_state==2
         new_blocks = np.zeros((12,16),np.int32)
-        new_blocks[board != previous_state] = board[board != previous_state]
+        new_blocks[post_break_board != previous_state] = post_break_board[post_break_board != previous_state]
         kernel = np.array([[0,1,0],[1,0,1],[0,1,0]])
         #
         new_ones = np.copy(new_blocks)
@@ -79,19 +85,28 @@ class GA:
         number_of_two_neighbors = np.sum(neighbor_count)
         new_neighbors = number_of_one_neighbors + number_of_two_neighbors
         
-        # average cluster size
-        acs = average_cluster_size(board)
+        # average cluster size, number of clusters
+        acs,number_of_clusters = average_cluster_size(post_break_board)
         
         # bumpiness
-        column_heights = np.sum(board!=0,axis=0)
+        column_heights = np.sum(post_break_board!=0,axis=0)
         adjacent_column_heights = np.roll(column_heights,1,0)
         column_deltas = abs(column_heights - adjacent_column_heights)
         bumpiness = np.sum(column_deltas)
         
         # max height
-        max_height = int(np.max(np.sum(board!=0,axis=0)))
+        max_height = int(np.max(np.sum(post_break_board!=0,axis=0)))
         #
-        return occupied_squares,aggregate_height,empty_columns,four_squares,acs,bumpiness,number_of_lonely_squares,max_height,new_neighbors
+        return [occupied_squares,
+                aggregate_height,
+                empty_columns,
+                four_squares,
+                acs,
+                number_of_clusters,
+                bumpiness,
+                number_of_lonely_squares,
+                max_height,
+                new_neighbors]
     def get_score(self,board,coefficients):
         s = np.asarray(self.get_board_stats(board)).reshape(self.number_of_genes,1)
         c = coefficients
@@ -150,6 +165,8 @@ class GA:
         deviations[deviations<.0001]=float(np.max(deviations)/5)
         gene_deltas = np.random.normal(loc=offspring,scale=deviations,size=(self.population_size,self.number_of_genes))
         offspring[genes_to_be_mutated]=gene_deltas[genes_to_be_mutated]
+        
+        # normalize genes?
         
         # save top dog
         offspring[0,:] = self.top_dog

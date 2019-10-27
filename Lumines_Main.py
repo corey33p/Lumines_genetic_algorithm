@@ -16,24 +16,24 @@ class Parent:
     def __init__(self):
         self.board_size=(10,16)
         self.board = Board(self.board_size)
-        # self.display  = Display(self,self.board_size)
+        self.display  = Display(self,self.board_size)
         self.GA = GA()
         # self.resize_CLI_window()
         #
-        # training_thread = threading.Thread(target=self.simulate_games)
-        # training_thread.daemon = True
-        # training_thread.start()
-        self.simulate_games()
+        training_thread = threading.Thread(target=self.simulate_games)
+        training_thread.daemon = True
+        training_thread.start()
+        # self.simulate_games()
         #
-        # mainloop()
+        mainloop()
     def simulate_games(self,n=3):
         forever = True
         generation = 0
-        games = []
         while forever:
             generation += 1
             self.GA.scores = [0 for i in range(self.GA.population_size)]
             max_moves = 0
+            games = []
             for i in range(n):
                 queue = [np.random.randint(1,3,(2,2)) for i in range(150)]
                 self.board.new_game(queue=queue)
@@ -58,10 +58,13 @@ class Parent:
                         # print("moves: " + str(moves),end="\r")
                         # print(self.board.print_board())
                         if moves > max_moves: max_moves = moves
+                    new_score = self.board.score+.05*self.board.pieces_placed**2
+                    self.display.textScreen.overwrite(self.board.print_board())
+                    self.display.update_score(new_score)
                     # print("moves: " + str(moves))
                     # print("self.board.game_lost: " + str(self.board.game_lost))
-                    self.GA.scores[i]+=self.board.score+.05*self.board.pieces_placed**2
-                    print("Generation: "+str(generation)+", Game: "+str(j+1)+", Player: "+str(i+1)+", Total: " + str(self.GA.scores[i]//.01/100),end="           \r")
+                    self.GA.scores[i]+=new_score
+                    print("Generation: "+str(generation)+", Game: "+str(j+1)+", Player: "+str(i+1)+", Score: " + str(new_score//.01/100)+", Moves: "+str(moves),end="              \r")
                 scores = np.asarray(self.GA.scores)/n
             print("Generation "+str(generation)+"; mean score: "+str(np.mean(scores)//.01/100)+"; max mean: "+str(max(scores)//.01/100)+"; max moves: "+str(max_moves))
             self.GA.crossover(np.asarray(self.GA.scores))
@@ -85,4 +88,5 @@ class Parent:
             win32gui.PostMessage(handle,win32con.WM_CLOSE,0,0)
 
 if __name__ == '__main__':
+    print("\n")
     main_object = Parent()
